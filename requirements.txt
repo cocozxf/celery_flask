@@ -8,3 +8,4 @@ flask
 flask_jwt_extended
 werkzeug
 flask_script
+flask_sqlalchemy
