@@ -161,8 +161,7 @@ CREATE TABLE `t_api_suite`  (
 -- ----------------------------
 -- Records of t_api_suite
 -- ----------------------------
-INSERT INTO `t_api_suite` VALUES (59, 'werwe', '瓦尔二部', 0, '2024-06-08 18:21:56');
-INSERT INTO `t_api_suite` VALUES (60, 'testr任务02', 'testr任务02', 0, '2024-06-16 15:53:08');
+
 
 -- ----------------------------
 -- Table structure for t_case
