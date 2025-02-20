@@ -16,7 +16,8 @@ module_route = Blueprint(f"route_{module_name}", __name__)
 @module_route.route('/ApiHistory/<path:dir>/<filename>', methods=["GET"])
 def uploaded_file(dir, filename):
     # report_root_dir = app.app.config['REPORT_ROOT_DIR']
-    return send_from_directory(f"{dir}/", filename, as_attachment=False)
+    print(dir,filename)
+    return send_from_directory(f"/{dir}/", filename, as_attachment=False)
 
 
 @module_route.route(f"/ApiHistory/queryByPage", methods=["POST"])
