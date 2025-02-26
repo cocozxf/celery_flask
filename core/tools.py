@@ -17,7 +17,8 @@ def login_required(f):
         global ltoken
         for value in tmplist:
             if "l-token" in value:
-                ltoken = value[8:]
+                index = value.find("=")
+                ltoken = value[index+1:]
         userValidation = JwtUtils.verify_token(ltoken)
         if userValidation:
             return f()

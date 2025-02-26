@@ -1,7 +1,11 @@
-import shutil
+"""
+用例信息数据的查询、新增、编辑删除及调试接口
+"""
 from flask import Blueprint, request
 
 from apitest.model.ApiInfoModel import ApiInfo
+from apitest.model.ApiModuleModel import ApiModule
+from apitest.model.ApiProjectModel import ApiProject
 from core.resp_model import respModel
 import app
 from apitest.model.ApiCollectionModel import ApiCollection
@@ -29,16 +33,29 @@ def queryByPage():
             filter_list = []
             # ====筛选条件(如果有筛选条件，在这里拓展 - filter)
             # 添加名称模糊搜索条件
-            collection_name = request.json.get("collection_name", "")
-            if len(collection_name) > 0:
+            collection_name = request.json.get("collection_name", "").strip()
+            if collection_name:
                 filter_list.append(module_model.collection_name.like(f'%{collection_name}%'))
             # 添加 项目筛选条件
             project_id = request.json.get("project_id", 0)
             if type(project_id) is not str and project_id > 0:
                 filter_list.append(module_model.project_id == project_id)
+            # 添加 模块筛选条件
+            module_id = request.json.get("module_id", 0)
+            if type(module_id) is not str and module_id > 0:
+                filter_list.append(module_model.module_id == module_id)
             # =====结束
             # 数据库查询
             datas = module_model.query.filter(*filter_list).limit(page_size).offset((page - 1) * page_size).all()
+            for obj in datas:
+                project_id = getattr(obj, "project_id")
+                module_id = getattr(obj, "module_id")
+                tmpproject = ApiProject.query.filter_by(id=project_id).first()
+                tmpmodule = ApiModule.query.filter_by(id=module_id).first()
+                project_name = vars(tmpproject).get("project_name")
+                module_name = vars(tmpmodule).get("module_name")
+                setattr(obj, "project_name", project_name)
+                setattr(obj, "module_name", module_name)
             total = module_model.query.filter(*filter_list).count()
             return respModel().ok_resp_list(lst=datas, total=total)
     except Exception as e:
@@ -80,7 +97,7 @@ def insert():
         return respModel.ok_resp(msg="添加成功", dic_t={"id": data_id})
     except Exception as e:
         print(e)
-        return respModel.error_resp(msg=f"添加失败:{e}")
+        return respModel.error_resp(msg=f"添加失败:{'请添加必填的用例信息'}")
 
 
 @module_route.route(f"/{module_name}/update", methods=["PUT"])
@@ -231,19 +248,19 @@ def execute_test():
             report_dir = app.app.config['REPORT_ROOT_DIR']
             report_file = report_dir + "/" + str(case_file_name) + ".html"
             # 执行测试
-            remote_command = f"apirun --cases={collection_dir} --html={report_file} -sv --capture=tee-sys "
+            remote_command = f"apirun --cases={collection_dir} --html={report_file} --self-contained-html -sv --capture=tee-sys "
 
             # 文件生成后生成完毕后，
-            # report_root_dir = app.app.config['REPORT_ROOT_DIR']
-            # report_data_path = os.path.join(report_root_dir, f"{execute_uuid}-data")  # 测试数据
-            # report_html_path = os.path.join(report_root_dir, execute_uuid)  # 测试html报告
+
+            # report_data_path = os.path.join(report_dir, str(case_file_name)+"test")  # 测试数据
+            # report_html_path = os.path.join(report_dir, str(case_file_name))  # 测试html报告
             # # 1. 执行测试
-            # remote_command = f"huace-apirun --cases={collection_dir} -sv --capture=tee-sys --alluredir={report_data_path} "
+            # remote_command = f"apirun --cases={collection_dir} --alluredir={report_data_path} -sv --capture=tee-sys "
             command_output = subprocess.check_output(remote_command, shell=True, universal_newlines=True,
                                                      encoding='utf-8')
             history_desc = command_output.split("\n")[-2].replace("=", "")
             # TODO 这里可以根据 command_output 命令输出的内容去做一些统计
-            # # 2. 生成html测试报告
+            # # # 2. 生成html测试报告
             # os.system(f"allure generate {report_data_path} -c -o {report_html_path}")  # 等于你在命令行里面执行 allure
             # # 3. 删除一些临时文件，保留html测试报告即可
             # shutil.rmtree(collection_dir)  # 测试套件临时yaml文件 collection_dir

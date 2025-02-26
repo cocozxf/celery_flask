@@ -26,7 +26,8 @@ def queryByPage():
             filter_list = []
             collection_id = int(request.json["collection_id"])
             filter_list.append(module_model.collection_id == collection_id)
-            cases = module_model.query.filter(*filter_list).limit(page_size).offset((page - 1) * page_size).all()
+            # cases = module_model.query.filter(*filter_list).limit(page_size).offset((page - 1) * page_size).all()
+            cases = module_model.query.filter(*filter_list)
             total = module_model.query.filter(*filter_list).count()
             # datas 里面加入接口信息
             # 获取当前页的 ApiCase 信息
@@ -36,7 +37,14 @@ def queryByPage():
                 result = respModel().get_custom_attributes(api_info)
                 result.update(respModel().get_custom_attributes(case))
                 results.append(result)
-            return respModel().ok_resp_simple_list(lst=results, total=total)
+            for i in range(len(results)):
+                for j in range(len(results) - i - 1):
+                    if results[j].get("run_order") > results[j + 1].get("run_order"):
+                        results[j], results[j + 1] = results[j + 1], results[j]
+            start = (page - 1) * page_size
+            end = start + page_size
+            newlist = results[start:end]
+            return respModel().ok_resp_simple_list(lst=newlist, total=total)
     except Exception as e:
         print(e)
         return respModel.error_resp(f"服务器错误,请联系管理员:{e}")

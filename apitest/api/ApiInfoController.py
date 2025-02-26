@@ -41,7 +41,7 @@ def queryByPage():
                 filter_list.append(module_model.module_id == module_id)
             # 添加名称模糊搜索条件
             api_name = request.json.get("api_name", "").strip()
-            if len(api_name) > 0:
+            if api_name:
                 filter_list.append(module_model.api_name.like(f'%{api_name}%'))
             # 数据库查询
             datas = module_model.query.filter(*filter_list).limit(page_size).offset((page - 1) * page_size).all()
